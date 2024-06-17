@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify Profile</title>
+</head>
+<body>
+    <h1>Spotify Profile</h1>
+    <div id="profile">
+        <h2>Profile Info</h2>
+        <p id="displayName">{{ profile.display_name }}</p>
+        {% if profile.images and profile.images[0] %}
+            <img id="avatar" src="{{ profile.images[0].url }}" width="200" height="200">
+            <p id="imgUrl">{{ profile.images[0].url }}</p>
+        {% endif %}
+        <p id="id">{{ profile.id }}</p>
+        <p id="email">{{ profile.email }}</p>
+        <p id="uri"><a href="{{ profile.external_urls.spotify }}">{{ profile.uri }}</a></p>
+        <p id="url"><a href="{{ profile.href }}">{{ profile.href }}</a></p>
+    </div>
+    <div id="currently-playing">
+        <h2>Currently Playing</h2>
+        <p id="songTitle">{{ currently_playing.item.name }}</p>
+    </div>
+</body>
+</html>
