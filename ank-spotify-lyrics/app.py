@@ -20,7 +20,7 @@ SCOPE = "user-read-private user-read-playback-state user-read-currently-playing"
 
 
 proxies = {
-   'http': '103.168.38.246:80'
+   'http': 'http://103.168.38.246:80'
 }
 
 AZAPI = azapi.AZlyrics('google', proxies=proxies)
