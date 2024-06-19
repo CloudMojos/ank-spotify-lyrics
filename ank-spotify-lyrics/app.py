@@ -68,9 +68,9 @@ def handle_currently_playing(access_token):
                 print("Lyrics found")
                 break
     
-    else:
+    elif currently_playing["currently_playing_type"] == 'ad':
         artist = "Spotify"
-        title = "Ad"
+        title = "It's a stupid ad..."
 
     return render_index(artist, title, lyrics)
 
