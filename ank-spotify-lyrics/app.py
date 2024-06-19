@@ -10,28 +10,34 @@ import time
 from pprint import pprint
 import azapi
 
-
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 CLIENT_ID = "86f91bfe53ca4b5a8e5032614f59507c"
 CLIENT_SECRET = "5ab8b2a948eb47f3a7eebd489ea8b1b3"  # Replace with your client secret
-SCOPE = "user-read-private user-read-email user-read-playback-state user-read-currently-playing"
+SCOPE = "user-read-private user-read-playback-state user-read-currently-playing"
 
-AZAPI = azapi.AZlyrics('google', accuracy=0.5)
+AZAPI = azapi.AZlyrics('duckduckgo')
 
 @app.route('/')
 def index():
     if 'access_token' in session and 'token_expires' in session:
         if session['token_expires'] > time.time():
-            profile = fetch_profile(session['access_token'])
             currently_playing = fetch_currently_playing(session['access_token'])
-            # pprint(profile)
-            pprint(currently_playing)
-            AZAPI.title = currently_playing["item"]["name"]
-            AZAPI.artist = currently_playing["item"]["artists"][0]["name"]
-            AZAPI.getLyrics()
-            return render_template('index.html', profile=profile, currently_playing=currently_playing, lyrics=AZAPI.lyrics)
+            artist = currently_playing["item"]["artists"][0]["name"]
+            title = currently_playing["item"]["name"]
+            
+            pass_artist_to_api(artist)
+            pass_title_to_api(title)
+
+            for i in range(3):
+                e = get_lyrics(i)
+                # 0 means error
+                if e != 0:
+                    break
+            if e == 0:
+                lyrics = 'Walang Mahanap'
+            return render_index()
         else:
             return redirect_to_auth_code_flow()
     else:
@@ -45,27 +51,57 @@ def callback():
         if access_token:
             session['access_token'] = access_token
             session['token_expires'] = time.time() + expires_in
-            profile = fetch_profile(access_token)
-            currently_playing = fetch_currently_playing(access_token)
-            # pprint(profile)
-            # pprint(currently_playing)
-            AZAPI.title = currently_playing["item"]["name"]
-            AZAPI.artist = currently_playing["item"]["artists"][0]["name"]
-            AZAPI.getLyrics()
-            return render_template('index.html', profile=profile, currently_playing=currently_playing, lyrics=AZAPI.lyrics)
+            currently_playing = fetch_currently_playing(session['access_token'])
+            artist = currently_playing["item"]["artists"][0]["name"]
+            title = currently_playing["item"]["name"]
+            
+            pass_artist_to_api(artist)
+            pass_title_to_api(title)
+
+            for i in range(3):
+                e = get_lyrics(i)
+                # 0 means error
+                if e != 0:
+                    break
+            if e == 0:
+                lyrics = 'Walang Mahanap'
+            return render_index()
         else:
             return redirect(url_for('index'))
             
     return "Error: Authorization code not provided."
 
+def pass_artist_to_api(artist):
+    AZAPI.artist = artist
+    print("Artist")
+    print(AZAPI.artist)
+
+def pass_title_to_api(title):
+    AZAPI.title = title
+    print("Title")
+    print(AZAPI.title)
+
+def get_lyrics(try_index):
+    lyrics = ''
+    if try_index == 0:
+        lyrics = AZAPI.getLyrics()
+    elif try_index == 1:
+        pass_title_to_api(AZAPI.title.lower())
+        lyrics = AZAPI.getLyrics()
+    elif try_index == 2:
+        pass_title_to_api(AZAPI.title.title())
+        lyrics = AZAPI.getLyrics()
+    return lyrics
+
+        
+
+def render_index():
+    # pprint(profile)
+    return render_template('index.html', currently_playing=currently_playing, lyrics=AZAPI.lyrics)
+
 def fetch_currently_playing(token):
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers=headers)
-    return response.json()
-
-def fetch_profile(token):
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.get("https://api.spotify.com/v1/me", headers=headers)
     return response.json()
 
 def redirect_to_auth_code_flow():

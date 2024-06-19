@@ -1,26 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spotify Profile</title>
+    <title>Spotify Lyrics</title>
 </head>
 <body>
-    <h1>Spotify Profile</h1>
-    <div id="profile">
-        <h2>Profile Info</h2>
-        <p id="displayName">{{ profile.display_name }}</p>
-        {% if profile.images and profile.images[0] %}
-            <img id="avatar" src="{{ profile.images[0].url }}" width="200" height="200">
-            <p id="imgUrl">{{ profile.images[0].url }}</p>
-        {% endif %}
-        <p id="id">{{ profile.id }}</p>
-        <p id="email">{{ profile.email }}</p>
-        {% if profile.external_urls and profile.external_urls.spotify %}
-            <p id="uri"><a href="{{ profile.external_urls.spotify }}">{{ profile.uri }}</a></p>
-        {% endif %}
-        {% if profile.href %}
-            <p id="url"><a href="{{ profile.href }}">{{ profile.href }}</a></p>
-        {% endif %}
-    </div>
     <div id="currently-playing">
         <h2>Currently Playing</h2>
         {% if currently_playing and currently_playing.item %}
