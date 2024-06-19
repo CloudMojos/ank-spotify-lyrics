@@ -2,14 +2,58 @@
 <html>
 <head>
     <title>Spotify Lyrics</title>
+    <style>
+         body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #currently-playing {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        #songTitle {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #songArtist {
+            font-size: 20px;
+            color: #555;
+        }
+        #songLyrics {
+            margin-top: 20px;
+            text-align: left;
+            white-space: pre-wrap;
+            max-height: 60vh;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <div id="currently-playing">
         <h2>Currently Playing</h2>
-        {% if currently_playing and currently_playing.item %}
-            <p id="songTitle">{{ currently_playing.item.name }}</p>
-            <p id="songArtist">by: {{ currently_playing.item.artists[0].name }}</p>
-            <p id="songLyrics">lyrics: {{ lyrics }}</p>
+        {% if title and artist %}
+            <p id="songTitle">{{ title }}</p>
+            <p id="songArtist">by: {{ artist }}</p>
+            <pre id="songLyrics">{{ lyrics }}</pre>
         {% else %}
             <p id="songTitle">No song currently playing</p>
         {% endif %}

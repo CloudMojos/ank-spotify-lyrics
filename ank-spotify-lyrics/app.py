@@ -6,38 +6,25 @@ import os
 import random
 import string
 import time
+import re
 
 from pprint import pprint
 import azapi
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = 'tofuhermit'
 
 CLIENT_ID = "86f91bfe53ca4b5a8e5032614f59507c"
 CLIENT_SECRET = "5ab8b2a948eb47f3a7eebd489ea8b1b3"  # Replace with your client secret
 SCOPE = "user-read-private user-read-playback-state user-read-currently-playing"
 
-AZAPI = azapi.AZlyrics('duckduckgo')
+AZAPI = azapi.AZlyrics('google')
 
 @app.route('/')
 def index():
     if 'access_token' in session and 'token_expires' in session:
         if session['token_expires'] > time.time():
-            currently_playing = fetch_currently_playing(session['access_token'])
-            artist = currently_playing["item"]["artists"][0]["name"]
-            title = currently_playing["item"]["name"]
-            
-            pass_artist_to_api(artist)
-            pass_title_to_api(title)
-
-            for i in range(3):
-                e = get_lyrics(i)
-                # 0 means error
-                if e != 0:
-                    break
-            if e == 0:
-                lyrics = 'Walang Mahanap'
-            return render_index()
+            return handle_currently_playing(session['access_token'])
         else:
             return redirect_to_auth_code_flow()
     else:
@@ -51,38 +38,46 @@ def callback():
         if access_token:
             session['access_token'] = access_token
             session['token_expires'] = time.time() + expires_in
-            currently_playing = fetch_currently_playing(session['access_token'])
-            artist = currently_playing["item"]["artists"][0]["name"]
-            title = currently_playing["item"]["name"]
-            
-            pass_artist_to_api(artist)
-            pass_title_to_api(title)
-
-            for i in range(3):
-                e = get_lyrics(i)
-                # 0 means error
-                if e != 0:
-                    break
-            if e == 0:
-                lyrics = 'Walang Mahanap'
-            return render_index()
+            return handle_currently_playing(access_token)
         else:
             return redirect(url_for('index'))
             
     return "Error: Authorization code not provided."
 
+def handle_currently_playing(access_token):
+    artist = '' 
+    title = ''
+    lyrics = ''
+    currently_playing = fetch_currently_playing(access_token)
+    if currently_playing["currently_playing_type"] == 'track':
+        pprint(currently_playing)
+        
+        artist = currently_playing["item"]["artists"][0]["name"]
+        title = remove_brackets(currently_playing["item"]["name"])
+        
+        pass_artist_to_api(artist)
+        pass_title_to_api(title)
+        for i in range(3):
+            lyrics = get_lyrics(i)
+            if isinstance(lyrics, str):
+                print("Lyrics found")
+                break
+    
+    else:
+        artist = "Spotify"
+        title = "Ad"
+
+    return render_index(artist, title, lyrics)
+
 def pass_artist_to_api(artist):
     AZAPI.artist = artist
-    print("Artist")
-    print(AZAPI.artist)
+    print("Artist:", AZAPI.artist)
 
 def pass_title_to_api(title):
     AZAPI.title = title
-    print("Title")
-    print(AZAPI.title)
+    print("Title:", AZAPI.title)
 
 def get_lyrics(try_index):
-    lyrics = ''
     if try_index == 0:
         lyrics = AZAPI.getLyrics()
     elif try_index == 1:
@@ -91,13 +86,13 @@ def get_lyrics(try_index):
     elif try_index == 2:
         pass_title_to_api(AZAPI.title.title())
         lyrics = AZAPI.getLyrics()
+    else:
+        return "No lyrics found"
+    print(lyrics)
     return lyrics
 
-        
-
-def render_index():
-    # pprint(profile)
-    return render_template('index.html', currently_playing=currently_playing, lyrics=AZAPI.lyrics)
+def render_index(artist, title, lyrics):
+    return render_template('index.html', artist=artist, title=title, lyrics=lyrics)
 
 def fetch_currently_playing(token):
     headers = {"Authorization": f"Bearer {token}"}
@@ -159,6 +154,10 @@ def get_access_token(code):
     else:
         print(response_data)  # Log the error response
         return None, None
+
+def remove_brackets(text):
+    cleaned_text = re.sub(r'\[.*?\]', '', text)
+    return cleaned_text.strip()
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5173)
