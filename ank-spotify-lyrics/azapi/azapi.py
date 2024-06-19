@@ -49,7 +49,7 @@ class AZlyrics(Requester):
                                 self.proxies
                             )
                     if not link:
-                        return 0
+                        return "tanginamo"
                 else:
                     link = normalGet(
                                 self.artist,
