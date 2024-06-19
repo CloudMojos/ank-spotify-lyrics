@@ -16,7 +16,6 @@ app.secret_key = os.urandom(24)
 
 CLIENT_ID = "86f91bfe53ca4b5a8e5032614f59507c"
 CLIENT_SECRET = "5ab8b2a948eb47f3a7eebd489ea8b1b3"  # Replace with your client secret
-REDIRECT_URI = "http://localhost:5173/callback"
 SCOPE = "user-read-private user-read-email user-read-playback-state user-read-currently-playing"
 
 AZAPI = azapi.AZlyrics('google', accuracy=0.5)
@@ -75,10 +74,12 @@ def redirect_to_auth_code_flow():
 
     session['verifier'] = verifier
 
+    redirect_uri = url_for('callback', _external=True)
+
     params = {
         "client_id": CLIENT_ID,
         "response_type": "code",
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "scope": SCOPE,
         "code_challenge_method": "S256",
         "code_challenge": challenge
@@ -102,12 +103,14 @@ def get_access_token(code):
     if not verifier:
         return None, None
 
+    redirect_uri = url_for('callback', _external=True)
+
     params = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "code_verifier": verifier
     }
     
@@ -122,4 +125,4 @@ def get_access_token(code):
         return None, None
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=573)
+    app.run(debug=True, host='0.0.0.0', port=5173)
