@@ -39,6 +39,7 @@ class AZlyrics(Requester):
                 if not self.artist + self.title:
                     raise ValueError("Both artist and title can't be empty!")
                 if self.search_engine:
+                    print("PROXIES: ", self.proxies)
                     link = googleGet(
                                 self.search_engine,
                                 self.accuracy,
@@ -49,9 +50,7 @@ class AZlyrics(Requester):
                                 self.proxies
                             )
                     if not link:
-                        return "tanginamo"
-                else:
-                    link = normalGet(
+                        link = normalGet(
                                 self.artist,
                                 self.title,
                                 0)

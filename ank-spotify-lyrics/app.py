@@ -55,7 +55,6 @@ def handle_currently_playing(access_token):
     lyrics = ''
     currently_playing = fetch_currently_playing(access_token)
     if currently_playing["currently_playing_type"] == 'track':
-        # pprint(currently_playing)
         
         artist = currently_playing["item"]["artists"][0]["name"]
         title = remove_brackets(currently_playing["item"]["name"])
@@ -93,7 +92,6 @@ def get_lyrics(try_index):
         lyrics = AZAPI.getLyrics()
     else:
         return "No lyrics found"
-    print(lyrics)
     return lyrics
 
 def render_index(artist, title, lyrics):
