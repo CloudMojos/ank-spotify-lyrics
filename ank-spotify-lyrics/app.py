@@ -18,7 +18,12 @@ CLIENT_ID = "86f91bfe53ca4b5a8e5032614f59507c"
 CLIENT_SECRET = "5ab8b2a948eb47f3a7eebd489ea8b1b3"  # Replace with your client secret
 SCOPE = "user-read-private user-read-playback-state user-read-currently-playing"
 
-AZAPI = azapi.AZlyrics('google')
+
+proxies = {
+   'http': '103.168.38.246:80'
+}
+
+AZAPI = azapi.AZlyrics('google', proxies=proxies)
 
 @app.route('/')
 def index():
