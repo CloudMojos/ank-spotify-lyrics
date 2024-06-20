@@ -1,5 +1,6 @@
 from .requester import Requester
 from .tools import *
+import random
 
 class AZlyrics(Requester):
     """
@@ -40,6 +41,7 @@ class AZlyrics(Requester):
                     raise ValueError("Both artist and title can't be empty!")
                 if self.search_engine:
                     print("PROXIES: ", self.proxies)
+                    print("Google get")
                     link = googleGet(
                                 self.search_engine,
                                 self.accuracy,
@@ -50,6 +52,7 @@ class AZlyrics(Requester):
                                 self.proxies
                             )
                     if not link:
+                        print("Normal get")
                         link = normalGet(
                                 self.artist,
                                 self.title,
@@ -68,14 +71,16 @@ class AZlyrics(Requester):
                     self.search_engine = ''
                     return lyrics
                 else:
-                    print('Error', page.status_code)
+                    print('Error', page.status_code, 'returning 1')
                     return 1
 
             metadata = [elm.text for elm in htmlFindAll(page)('b')]
             
-            if not metadata:
+            if not metadata or len(metadata) < 2:
                 print('Error', 'no metadata')
-                return 1
+                print('IP banned. Switching proxy...')
+                self.proxies = random.choice(self.PROXIES)
+                return self.getLyrics(url=url, ext=ext, save=save, path=path, sleep=sleep)
             
             self.artist = filtr(metadata[0][:-7], True)
             self.title = filtr(metadata[1][1:-1], True)
@@ -100,11 +105,11 @@ class AZlyrics(Requester):
                 self.lyrics_history.append(self.lyrics)
                 return self.lyrics
 
-            self.lyrics = 'No lyrics found :('
+            self.lyrics = 'No lyrics found :(, returning 2'
             return 2
         
         except Exception as e:
-            print('An error occurred:', str(e))
+            print('An error occurred:', str(e), 'returning 1')
             return 1
 
 

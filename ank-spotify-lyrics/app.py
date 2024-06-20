@@ -1,29 +1,26 @@
 from flask import Flask, redirect, request, session, render_template, url_for
 import requests
-import base64
-import hashlib
 import os
-import random
-import string
 import time
 import re
 
 from pprint import pprint
+
 import azapi
+from spotify import *
 
 app = Flask(__name__)
 app.secret_key = 'tofuhermit'
 
-CLIENT_ID = "86f91bfe53ca4b5a8e5032614f59507c"
-CLIENT_SECRET = "5ab8b2a948eb47f3a7eebd489ea8b1b3"  # Replace with your client secret
-SCOPE = "user-read-private user-read-playback-state user-read-currently-playing"
-
 
 proxies = {
-   'http': 'http://103.168.38.246:80'
+   'http': 'http://103.168.38.246:80',
+   'socks4': 'https://103.105.41.209:4145'
 }
 
-AZAPI = azapi.AZlyrics('google', proxies=proxies)
+se = ["google", "duckduckgo"]
+
+AZAPI = azapi.AZlyrics(se[0], accuracy=0.5, proxies=proxies)
 
 @app.route('/')
 def index():
@@ -54,23 +51,34 @@ def handle_currently_playing(access_token):
     title = ''
     lyrics = ''
     currently_playing = fetch_currently_playing(access_token)
+    # print(currently_playing["currently_playing_type"])
     if currently_playing["currently_playing_type"] == 'track':
-        
+        print("Artist")
+        print(currently_playing["item"]["artists"])
         artist = currently_playing["item"]["artists"][0]["name"]
         title = remove_brackets(currently_playing["item"]["name"])
         
         pass_artist_to_api(artist)
         pass_title_to_api(title)
         for i in range(3):
+            print("Trying to find lyrics: ", i)
             lyrics = get_lyrics(i)
             if isinstance(lyrics, str):
                 print("Lyrics found")
                 break
+        else:  # This else clause corresponds to the for-loop, not the if statement.
+            swap_search_engine()
+            for i in range(3):
+                lyrics = get_lyrics(i)
+                if isinstance(lyrics, str) and lyrics != 'No lyrics found :(':
+                    print("Lyrics found with swapped search engine")
+                    break
     
     elif currently_playing["currently_playing_type"] == 'ad':
         artist = "Spotify"
         title = "It's a stupid ad..."
 
+    print(lyrics)
     return render_index(artist, title, lyrics)
 
 def pass_artist_to_api(artist):
@@ -82,81 +90,27 @@ def pass_title_to_api(title):
     print("Title:", AZAPI.title)
 
 def get_lyrics(try_index):
+    lyrics = 0  
     if try_index == 0:
         lyrics = AZAPI.getLyrics()
     elif try_index == 1:
         pass_title_to_api(AZAPI.title.lower())
         lyrics = AZAPI.getLyrics()
-    elif try_index == 2:
-        pass_title_to_api(AZAPI.title.title())
-        lyrics = AZAPI.getLyrics()
-    else:
+    # elif try_index == 2:
+    #     pass_title_to_api(AZAPI.title.title())
+    #     lyrics = AZAPI.getLyrics()
+    elif try_index > 2:
         return "No lyrics found"
     return lyrics
 
 def render_index(artist, title, lyrics):
     return render_template('index.html', artist=artist, title=title, lyrics=lyrics)
 
-def fetch_currently_playing(token):
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.get("https://api.spotify.com/v1/me/player/currently-playing", headers=headers)
-    return response.json()
-
-def redirect_to_auth_code_flow():
-    verifier = generate_code_verifier(128)
-    challenge = generate_code_challenge(verifier)
-
-    session['verifier'] = verifier
-
-    redirect_uri = url_for('callback', _external=True)
-
-    params = {
-        "client_id": CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": redirect_uri,
-        "scope": SCOPE,
-        "code_challenge_method": "S256",
-        "code_challenge": challenge
-    }
-
-    url = f"https://accounts.spotify.com/authorize?{requests.compat.urlencode(params)}"
-    return redirect(url)
-
-def generate_code_verifier(length):
-    possible = string.ascii_letters + string.digits
-    return ''.join(random.choice(possible) for _ in range(length))
-
-def generate_code_challenge(verifier):
-    verifier_bytes = verifier.encode('utf-8')
-    digest = hashlib.sha256(verifier_bytes).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b'=').decode('utf-8')
-    return challenge
-
-def get_access_token(code):
-    verifier = session.get('verifier')
-    if not verifier:
-        return None, None
-
-    redirect_uri = url_for('callback', _external=True)
-
-    params = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": redirect_uri,
-        "code_verifier": verifier
-    }
-    
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    response = requests.post("https://accounts.spotify.com/api/token", data=params, headers=headers)
-    response_data = response.json()
-    
-    if 'access_token' in response_data and 'expires_in' in response_data:
-        return response_data['access_token'], response_data['expires_in']
-    else:
-        print(response_data)  # Log the error response
-        return None, None
+def swap_search_engine():
+    current_engine = AZAPI.search_engine
+    new_engine = se[1] if current_engine == se[0] else se[0]
+    AZAPI.search_engine = new_engine
+    print(f"Swapped search engine to: {AZAPI.search_engine}")
 
 def remove_brackets(text):
     cleaned_text = re.sub(r'\[.*?\]', '', text)
